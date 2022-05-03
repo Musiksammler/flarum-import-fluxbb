@@ -1,6 +1,6 @@
 <?php
 
-namespace ArchLinux\ImportFluxBB\Importer;
+namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -8,7 +8,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class PostMentionsUser
 {
-    private ConnectionInterface $database;
+    /**
+     * @var ConnectionInterface
+     */
+    private $database;
 
     public function __construct(ConnectionInterface $database)
     {

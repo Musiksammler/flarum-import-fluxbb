@@ -1,6 +1,6 @@
 <?php
 
-namespace ArchLinux\ImportFluxBB\Importer;
+namespace Packrats\ImportFluxBB\Importer;
 
 use Flarum\Formatter\Formatter;
 use Flarum\Foundation\ContainerUtil;
@@ -18,10 +18,26 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Posts
 {
-    private ConnectionInterface $database;
-    private Formatter $importFormatter;
-    protected Container $container;
-    private string $fluxBBDatabase;
+    /**
+     * @var ConnectionInterface
+     */
+    private $database;
+    /**
+     * @var Formatter
+     */
+    private $importFormatter;
+    /**
+     * @var Container
+     */
+    protected $container;
+    /**
+     * @var string
+     */
+    private $fluxBBDatabase;
+    /**
+     * @var string
+     */
+    private $fluxBBPrefix;
 
     public function __construct(ConnectionInterface $database, Container $container)
     {
@@ -29,15 +45,16 @@ class Posts
         $this->container = $container;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase)
+    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
+        $this->fluxBBPrefix = $fluxBBPrefix;
         $this->importFormatter = $this->createFormater();
 
         $output->writeln('Importing posts...');
 
         $posts = $this->database
-            ->table($this->fluxBBDatabase . '.posts')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
             ->select(
                 [
                     'id',
@@ -100,7 +117,7 @@ class Posts
     private function getUserByName(string $nickname): ?int
     {
         $user = $this->database
-            ->table($this->fluxBBDatabase . '.users')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'users')
             ->select(['id'])
             ->where('username', '=', $nickname)
             ->get()

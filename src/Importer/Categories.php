@@ -1,6 +1,6 @@
 <?php
 
-namespace ArchLinux\ImportFluxBB\Importer;
+namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
@@ -9,21 +9,32 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Categories
 {
-    private ConnectionInterface $database;
-    private string $fluxBBDatabase;
+    /**
+     * @var ConnectionInterface
+     */
+    private $database;
+    /**
+     * @var string
+     */
+    private $fluxBBDatabase;
+    /**
+     * @var string
+     */
+    private $fluxBBPrefix;
 
     public function __construct(ConnectionInterface $database)
     {
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase)
+    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
+        $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing categories...');
 
         $categories = $this->database
-            ->table($this->fluxBBDatabase . '.categories')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'categories')
             ->select(
                 [
                     'id',
@@ -65,7 +76,7 @@ class Categories
     private function getNumberOfTopics(int $categoryId): int
     {
         return $this->database
-            ->table($this->fluxBBDatabase . '.forums')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
             ->selectRaw('SUM(num_topics) AS total_topics')
             ->where('cat_id', '=', $categoryId)
             ->get()
@@ -76,7 +87,7 @@ class Categories
     private function getLastPostId(int $categoryId): int
     {
         return $this->database
-            ->table($this->fluxBBDatabase . '.forums')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
             ->select(['last_post_id'])
             ->where('cat_id', '=', $categoryId)
             ->orderBy('last_post', 'DESC')
@@ -88,7 +99,7 @@ class Categories
     private function getLastPostedAt(int $categoryId): int
     {
         return $this->database
-            ->table($this->fluxBBDatabase . '.forums')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
             ->select(['last_post'])
             ->where('cat_id', '=', $categoryId)
             ->orderBy('last_post', 'DESC')
@@ -102,7 +113,7 @@ class Categories
         $lastPostId = $this->getLastPostId($categoryId);
 
         return $this->database
-            ->table($this->fluxBBDatabase . '.posts')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
             ->select(['topic_id'])
             ->where('id', '=', $lastPostId)
             ->get()
@@ -115,7 +126,7 @@ class Categories
         $lastPostId = $this->getLastPostId($categoryId);
 
         $topic = $this->database
-            ->table($this->fluxBBDatabase . '.posts')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
             ->select(['poster_id'])
             ->where('id', '=', $lastPostId)
             ->where('poster_id', '!=', 1)

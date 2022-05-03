@@ -1,6 +1,6 @@
 <?php
 
-namespace ArchLinux\ImportFluxBB\Importer;
+namespace Packrats\ImportFluxBB\Importer;
 
 use Flarum\Foundation\Paths;
 use Illuminate\Database\ConnectionInterface;
@@ -9,8 +9,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class InitialCleanup
 {
-    private ConnectionInterface $database;
-    private ContainerInterface $container;
+    /**
+     * @var ConnectionInterface
+     */
+    private $database;
+    /**
+     * @var ContainerInterface
+     */
+    private $container;
 
     public function __construct(ConnectionInterface $database, ContainerInterface $container)
     {
@@ -23,10 +29,10 @@ class InitialCleanup
         $output->writeln('Initial cleanup...');
 
         $this->database->statement('SET FOREIGN_KEY_CHECKS=0');
-        $this->database->statement('TRUNCATE TABLE groups');
-        $this->database->statement('TRUNCATE TABLE group_user');
-        $this->database->statement('TRUNCATE TABLE tags');
-        $this->database->statement('TRUNCATE TABLE users');
+        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'groups');
+        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'group_user');
+        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'tags');
+        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'users');
         $this->database->statement('SET FOREIGN_KEY_CHECKS=1');
 
         foreach (glob($this->container[Paths::class]->public . '/assets/avatars/*.*') as $avatar) {

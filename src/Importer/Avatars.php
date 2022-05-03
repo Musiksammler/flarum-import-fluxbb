@@ -1,6 +1,6 @@
 <?php
 
-namespace ArchLinux\ImportFluxBB\Importer;
+namespace Packrats\ImportFluxBB\Importer;
 
 use Flarum\Foundation\Paths;
 use Illuminate\Database\ConnectionInterface;
@@ -12,10 +12,26 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Avatars
 {
-    private ConnectionInterface $database;
-    private string $fluxBBDatabase;
-    private string $avatarsDir;
-    private ContainerInterface $container;
+    /**
+     * @var ConnectionInterface
+     */
+    private $database;
+    /**
+     * @var string
+     */
+    private $fluxBBDatabase;
+    /**
+     * @var string
+     */
+    private $fluxBBPrefix;
+    /**
+     * @var string
+     */
+    private $avatarsDir;
+    /**
+     * @var ContainerInterface
+     */
+    private $container;
 
     public function __construct(ConnectionInterface $database, ContainerInterface $container)
     {
@@ -23,14 +39,15 @@ class Avatars
         $this->container = $container;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $avatarsDir)
+    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix, string $avatarsDir)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
+        $this->fluxBBPrefix = $fluxBBPrefix;
         $this->avatarsDir = $avatarsDir;
         $output->writeln('Importing avatars...');
 
         $users = $this->database
-            ->table($this->fluxBBDatabase . '.users')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'users')
             ->select(['id'])
             ->where('username', '!=', 'Guest')
             ->orderBy('id')

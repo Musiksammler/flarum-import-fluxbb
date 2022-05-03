@@ -1,8 +1,8 @@
 <?php
 
-namespace ArchLinux\ImportFluxBB;
+namespace Packrats\ImportFluxBB;
 
-use ArchLinux\ImportFluxBB\Console\ImportFromFluxBB;
+use Packrats\ImportFluxBB\Console\ImportFromFluxBB;
 use Flarum\Extend;
 
 return [

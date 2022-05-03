@@ -1,6 +1,6 @@
 <?php
 
-namespace ArchLinux\ImportFluxBB\Importer;
+namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -8,21 +8,32 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Reports
 {
-    private ConnectionInterface $database;
-    private string $fluxBBDatabase;
+    /**
+     * @var ConnectionInterface
+     */
+    private $database;
+    /**
+     * @var string
+     */
+    private $fluxBBDatabase;
+    /**
+     * @var string
+     */
+    private $fluxBBPrefix;
 
     public function __construct(ConnectionInterface $database)
     {
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase)
+    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
+        $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing reports...');
 
         $reports = $this->database
-            ->table($this->fluxBBDatabase . '.reports')
+            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'reports')
             ->select(
                 [
                     'id',
