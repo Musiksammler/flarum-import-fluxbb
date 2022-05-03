@@ -1,5 +1,5 @@
 {
-    "name": "archlinux-de/flarum-import-fluxbb",
+    "name": "packrats/flarum-import-fluxbb",
     "description": "Import FluxBB data to Flarum",
     "license": "GPL-3.0-or-later",
     "type": "flarum-extension",

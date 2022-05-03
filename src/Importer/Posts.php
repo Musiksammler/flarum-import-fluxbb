@@ -145,34 +145,13 @@ class Posts
             // FluxBB uses a different syntax
             '#\[img=(.+?)\](.+?)\[/img\]#i' => '[IMG ALT=$1]$2[/IMG]',
 
-            '#<a href="thread\.php\?[^"]*thread=([0-9]+)[^"]*">\[url\].+?\[/url\]</a>#' => '[URL]https://bbs.archlinux.de/viewtopic.php?id=$1[/URL]',
-            '#<a href="thread\.php\?[^"]*thread=([0-9]+)[^"]*">(.+?)</a>#' => '[URL=https://bbs.archlinux.de/viewtopic.php?id=$1]$2[/URL]',
-
-            '#<a href="showArticle\.php\?link=(.+?)">(.+?)</a>#' => '[URL=https://wiki.archlinux.de/title/$1]$2[/URL]',
-            '#<a href="packages\.php.*?">(.+?)</a>#' => '[URL=https://www.archlinux.de/packages]$1[/URL]',
-
-            '#<a href="\?page=Postings;id=20;thread=([0-9]+)" class="link">(.+?)</a>#s' => '[URL=https://bbs.archlinux.de/viewtopic.php?id=$1]$2[/URL]',
-
             '#<a href="\[url\](.+?)\[/url\]"?[^>]*>.+?</a>#s' => '[URL]$1[/URL]',
 
             '#<a href="?id=20;page=GetAttachment;file=1485" rel="nofollow"><img src="?id=20;page=GetAttachmentThumb;file=1485" alt="screenshot2.png" title="screenshot2.png" class="image" /></a>#' => '[URL]$1[/URL]',
 
-            '#\[url=(http://forum\.archlinux\.de[^\]]*)\]http://www\.laber\-land\.de[^\[]*\[/url\]#' => '[URL]$1[/URL]',
-
             '#<a href="(.+?)">\[url\].+?\[/url\](\.\.\.)?</a>#' => '[URL]$1[/URL]',
 
             '#<a href="([^"]+)">(.+?)</a>#' => '[URL=$1]$2[/URL]',
-
-
-            '#\[topic\](.+?)\[/topic\]#i' => '[URL]https://bbs.archlinux.de/viewtopic.php?id=$1[/URL]',
-            '#\[post\](.+?)\[/post\]#i' => '[URL]https://bbs.archlinux.de/viewtopic.php?pid=$1#p$1[/URL]',
-            '#\[forum\](.+?)\[/forum\]#i' => '[URL]https://bbs.archlinux.de/viewforum.php?id=$1[/URL]',
-            '#\[user\](.+?)\[/user\]#i' => '[URL]https://bbs.archlinux.de/profile.php?id=$1[/URL]',
-
-            '#\[topic=([0-9]+)\](.+?)\[/topic\]#i' => '[URL=https://bbs.archlinux.de/viewtopic.php?id=$1]$2[/URL]',
-            '#\[post=([0-9]+)\](.+?)\[/post\]#i' => '[URL=https://bbs.archlinux.de/viewtopic.php?pid=$1#p$]$2[/URL]',
-            '#\[forum=([0-9]+)\](.+?)\[/forum\]#i' => '[URL=https://bbs.archlinux.de/viewforum.php?id=$1]$2[/URL]',
-            '#\[user=([0-9]+)\](.+?)\[/user\]#i' => '[URL=https://bbs.archlinux.de/profile.php?id=$1]$2[/URL]'
         ];
 
         return preg_replace(array_keys($replacements), array_values($replacements), $text);
