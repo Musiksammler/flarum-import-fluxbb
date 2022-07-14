@@ -29,10 +29,15 @@ class InitialCleanup
         $output->writeln('Initial cleanup...');
 
         $this->database->statement('SET FOREIGN_KEY_CHECKS=0');
+
+        $this->database->statement('ALTER TABLE '.$this->database->getTablePrefix().'users DROP (`users_email_unique`)');
+        $this->database->statement('ALTER TABLE '.$this->database->getTablePrefix().'users ADD KEY `users_email_unique` (`email`)');
+
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'groups');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'group_user');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'tags');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'users');
+
         $this->database->statement('SET FOREIGN_KEY_CHECKS=1');
 
         foreach (glob($this->container[Paths::class]->public . '/assets/avatars/*.*') as $avatar) {
