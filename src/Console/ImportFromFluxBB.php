@@ -153,7 +153,7 @@ class ImportFromFluxBB extends AbstractCommand
             'flarum-bbcode',
             'flarum-emoji',
             'flarum-mentions',
-            'flarum-nicknames',
+//            'flarum-nicknames',
             'flarum-sticky',
             'flarum-subscriptions',
             'flarum-tags',

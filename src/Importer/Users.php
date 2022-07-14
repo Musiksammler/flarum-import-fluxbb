@@ -86,7 +86,7 @@ class Users
 
         $progressBar = new ProgressBar($output, count($users));
 
-        $userNames = $this->createUsernameMap($users);
+        // $userNames = $this->createUsernameMap($users);
 
         foreach ($users as $user) {
             $lastSeenAt = (new DateTime())->setTimestamp($user->last_visit);
@@ -107,7 +107,7 @@ class Users
                     ->insert(
                         [
                             'id' => $user->id,
-                            'username' => $userNames[$user->id],
+                            'username' => $user->username, //$userNames[$user->id],
                             'nickname' => $user->username,
                             'email' => $user->email,
                             'is_email_confirmed' => $user->group_id == 0 ? 0 : 1,
