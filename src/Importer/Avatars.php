@@ -75,11 +75,19 @@ class Avatars
      */
     private function createAvatarUrl(int $userId): ?string
     {
-        $avatarFile = glob($this->avatarsDir . '/' . $userId . '.*');
-        if (!$avatarFile) {
+        $avatarGif = file_get_contents(sprintf('https://www.musik-sammler.de/forum/img/avatars/%d.gif', $userId));
+        $avatarJpg = file_get_contents(sprintf('https://www.musik-sammler.de/forum/img/avatars/%d.jpg', $userId));
+        $avatarPng = file_get_contents(sprintf('https://www.musik-sammler.de/forum/img/avatars/%d.png', $userId));
+
+        if ($avatarGif !== false) {
+            $avatarFile = $avatarGif;
+        } elseif ($avatarJpg !== false) {
+            $avatarFile = $avatarJpg;
+        } elseif ($avatarPng !== false) {
+            $avatarFile = $avatarPng;
+        } else {
             return null;
         }
-        $avatarFile = $avatarFile[0];
 
         $newFileName = Str::random() . '.png';
         $newDir = $this->container[Paths::class]->public . '/assets/avatars';
@@ -103,7 +111,7 @@ class Avatars
             $encodedImage = $image->orientate()->fit($newSize, $newSize)->encode('png');
             file_put_contents($newPath, $encodedImage);
         } else {
-            copy($avatarFile, $newPath);
+            file_put_contents($avatarFile, $newPath);
         }
         system('optipng -o 5 -strip all -snip -quiet ' . $newPath);
 
