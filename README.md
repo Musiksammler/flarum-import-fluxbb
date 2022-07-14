@@ -12,7 +12,7 @@ composer require packrats/flarum-import-fluxbb
 ### Usage
 
 ```sh
-./flarum app:import-from-fluxbb  [<fluxbb-database> [<fluxbb-prefix> [[<avatars-dir>]]]
+./flarum app:import-from-fluxbb  <fluxbb-database> <fluxbb-user> <fluxbb-password> [<fluxbb-prefix>]
 ```
 
 P.S.: And yes, i hate laravel...

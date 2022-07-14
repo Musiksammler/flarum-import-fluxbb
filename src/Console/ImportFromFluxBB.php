@@ -129,11 +129,10 @@ class ImportFromFluxBB extends AbstractCommand
         $this
             ->setName('app:import-from-fluxbb')
             ->setDescription('Import from FluxBB')
-            ->addArgument('fluxbb-database', InputArgument::OPTIONAL, '', 'fluxbb')
-            ->addArgument('fluxbb-user', InputArgument::OPTIONAL, '', 'user')
-            ->addArgument('fluxbb-password', InputArgument::OPTIONAL, '', 'password')
-            ->addArgument('fluxbb-prefix', InputArgument::OPTIONAL, '', '')
-            ->addArgument('avatars-dir', InputArgument::OPTIONAL, '', '/fluxbb-avatars');
+            ->addArgument('fluxbb-database', InputArgument::REQUIRED)
+            ->addArgument('fluxbb-user', InputArgument::REQUIRED)
+            ->addArgument('fluxbb-password', InputArgument::REQUIRED)
+            ->addArgument('fluxbb-prefix', InputArgument::OPTIONAL, '', '');
     }
 
     protected function fire()
@@ -172,12 +171,7 @@ class ImportFromFluxBB extends AbstractCommand
 
         $this->initialCleanup->execute($this->output);
         $this->users->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
-        $this->avatars->execute(
-            $this->output,
-            $fluxBBDatabase,
-            $this->input->getArgument('fluxbb-prefix'),
-            $this->input->getArgument('avatars-dir')
-        );
+        $this->avatars->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->categories->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->forums->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->topics->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));

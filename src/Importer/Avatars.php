@@ -26,10 +26,7 @@ class Avatars
      * @var string
      */
     private $fluxBBPrefix;
-    /**
-     * @var string
-     */
-    private $avatarsDir;
+
     /**
      * @var ContainerInterface
      */
@@ -41,11 +38,10 @@ class Avatars
         $this->container = $container;
     }
 
-    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix, string $avatarsDir)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
-        $this->avatarsDir = $avatarsDir;
         $output->writeln('Importing avatars...');
 
         $sql = sprintf(
