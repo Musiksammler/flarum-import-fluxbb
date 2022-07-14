@@ -134,7 +134,7 @@ class Users
 
     private function isValidUsername(string $username): bool
     {
-        return preg_match('/^[a-z0-9_-]{3,30}$/i', $username);
+        return preg_match('/^[a-z0-9_-]{3,100}$/i', $username);
     }
 
     /**
