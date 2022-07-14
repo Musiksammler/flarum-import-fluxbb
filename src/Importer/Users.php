@@ -229,7 +229,7 @@ class Users
     private function getCommentCount(int $userId): int
     {
         $sql = sprintf(
-            "SELECT COUNT(`id`) FROM %s WHERE `poster_id = :userId`",
+            "SELECT COUNT(`id`) FROM %s WHERE `poster_id` = :userId",
             $this->fluxBBPrefix .'posts'
         );
         $stmt = $this->fluxBBDatabase->prepare($sql);
