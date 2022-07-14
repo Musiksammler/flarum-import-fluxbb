@@ -30,7 +30,7 @@ class InitialCleanup
 
         $this->database->statement('SET FOREIGN_KEY_CHECKS=0');
 
-        $this->database->statement('ALTER TABLE '.$this->database->getTablePrefix().'users DROP INDEX (`users_email_unique`)');
+        $this->database->statement('ALTER TABLE '.$this->database->getTablePrefix().'users DROP INDEX (`email`)');
         $this->database->statement('ALTER TABLE '.$this->database->getTablePrefix().'users ADD INDEX `users_email_unique` (`email`)');
 
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'groups');
