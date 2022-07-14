@@ -91,17 +91,17 @@ class Users
         foreach ($users as $user) {
             $lastSeenAt = (new DateTime())->setTimestamp($user->last_visit);
 
-            if ((int)$user->id === 2) { // Assuming that the first user of flarum is the same admin/user as in the old forum
-                $this->database
-                    ->table('users')
-                    ->where('id', 1)
-                    ->update([
-                        'joined_at' => (new DateTime())->setTimestamp($user->registered),
-                        'last_seen_at' => $lastSeenAt,
-                        'discussion_count' => $this->getDiscussionCount($user->id),
-                        'comment_count' => $this->getCommentCount($user->id),
-                    ]);
-            } else {
+//            if ((int)$user->id === 2) { // Assuming that the first user of flarum is the same admin/user as in the old forum
+//                $this->database
+//                    ->table('users')
+//                    ->where('id', 1)
+//                    ->update([
+//                        'joined_at' => (new DateTime())->setTimestamp($user->registered),
+//                        'last_seen_at' => $lastSeenAt,
+//                        'discussion_count' => $this->getDiscussionCount($user->id),
+//                        'comment_count' => $this->getCommentCount($user->id),
+//                    ]);
+//            } else {
                 $this->database
                     ->table('users')
                     ->insert(
@@ -124,7 +124,7 @@ class Users
                             'migratetoflarum_old_password' => $this->createOldPasswordHash($user->password)
                         ]
                     );
-            }
+//            }
             $progressBar->advance();
         }
         $progressBar->finish();
