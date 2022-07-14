@@ -91,10 +91,10 @@ class Users
         foreach ($users as $user) {
             $lastSeenAt = (new DateTime())->setTimestamp($user->last_visit);
 
-            if ((int)$user->id === 1) { // Assuming that the first user is the same admin/user as in the old forum
+            if ((int)$user->id === 2) { // Assuming that the first user of flarum is the same admin/user as in the old forum
                 $this->database
                     ->table('users')
-                    ->where('id', $user->id)
+                    ->where('id', 1)
                     ->update([
                         'joined_at' => (new DateTime())->setTimestamp($user->registered),
                         'last_seen_at' => $lastSeenAt,
