@@ -99,7 +99,7 @@ class Avatars
             throw new RuntimeException('Avatar already exists: ' . $newFileName);
         }
 
-        Image::configure(['driver' => 'imagick']);
+        Image::configure(['driver' => 'gd']);
         $image = Image::make($avatarFile);
         if (!Str::endsWith($avatarFile, '.png')
             || $image->getWidth() !== $image->getHeight()
