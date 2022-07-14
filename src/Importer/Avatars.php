@@ -26,7 +26,10 @@ class Avatars
      * @var string
      */
     private $fluxBBPrefix;
-
+    /**
+     * @var string
+     */
+    private $fluxBBHost;
     /**
      * @var ContainerInterface
      */
@@ -38,10 +41,11 @@ class Avatars
         $this->container = $container;
     }
 
-    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix, string $fluxBBHost)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
+        $this->fluxBBHost = $fluxBBHost;
         $output->writeln('Importing avatars...');
 
         $sql = sprintf(
@@ -71,9 +75,9 @@ class Avatars
      */
     private function createAvatarUrl(int $userId): ?string
     {
-        $avatarGif = file_get_contents(sprintf('https://www.musik-sammler.de/forum/img/avatars/%d.gif', $userId));
-        $avatarJpg = file_get_contents(sprintf('https://www.musik-sammler.de/forum/img/avatars/%d.jpg', $userId));
-        $avatarPng = file_get_contents(sprintf('https://www.musik-sammler.de/forum/img/avatars/%d.png', $userId));
+        $avatarGif = file_get_contents(sprintf('%s/forum/img/avatars/%d.gif', $this->fluxBBHost, $userId));
+        $avatarJpg = file_get_contents(sprintf('%s/forum/img/avatars/%d.jpg', $this->fluxBBHost, $userId));
+        $avatarPng = file_get_contents(sprintf('%s/forum/img/avatars/%d.png', $this->fluxBBHost, $userId));
 
         if ($avatarGif !== false) {
             $avatarFile = $avatarGif;
