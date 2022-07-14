@@ -2,6 +2,7 @@
 
 namespace Packrats\ImportFluxBB\Importer;
 
+use DateTime;
 use Flarum\Formatter\Formatter;
 use Flarum\Foundation\ContainerUtil;
 use Flarum\Foundation\Paths;
@@ -12,6 +13,7 @@ use Illuminate\Cache\Repository;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Filesystem\Filesystem;
+use PDO;
 use s9e\TextFormatter\Configurator;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,7 +33,7 @@ class Posts
      */
     protected $container;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -45,7 +47,7 @@ class Posts
         $this->container = $container;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
@@ -53,27 +55,26 @@ class Posts
 
         $output->writeln('Importing posts...');
 
-        $posts = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select(
-                [
-                    'id',
-                    'poster',
-                    'poster_id',
-                    'poster_ip',
-                    'poster_email',
-                    'message',
-                    'hide_smilies',
-                    'posted',
-                    'edited',
-                    'edited_by',
-                    'topic_id'
-                ]
-            )
-            ->orderBy('topic_id')
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $fields = [
+            'id',
+            'poster',
+            'poster_id',
+            'poster_ip',
+            'poster_email',
+            'message',
+            'hide_smilies',
+            'posted',
+            'edited',
+            'edited_by',
+            'topic_id'
+        ];
+        $sql = sprintf(
+            "SELECT %s FROM %s ORDER BY `topic_id`, `id`",
+            implode(', ', $fields),
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $posts = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         $progressBar = new ProgressBar($output, count($posts));
 
@@ -92,11 +93,11 @@ class Posts
                         'id' => $post->id,
                         'discussion_id' => $post->topic_id,
                         'number' => $currentPostNumber,
-                        'created_at' => (new \DateTime())->setTimestamp($post->posted),
+                        'created_at' => (new DateTime())->setTimestamp($post->posted),
                         'user_id' => $post->poster_id > 1 ? $post->poster_id : null,
                         'type' => 'comment',
                         'content' => $this->convertPostContent($post),
-                        'edited_at' => $post->edited ? (new \DateTime())->setTimestamp($post->edited) : null,
+                        'edited_at' => $post->edited ? (new DateTime())->setTimestamp($post->edited) : null,
                         'edited_user_id' => $post->edited_by ? $this->getUserByName($post->edited_by) : null,
                         'hidden_at' => null,
                         'hidden_user_id' => null,
@@ -116,14 +117,16 @@ class Posts
 
     private function getUserByName(string $nickname): ?int
     {
-        $user = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'users')
-            ->select(['id'])
-            ->where('username', '=', $nickname)
-            ->get()
-            ->first();
+        $sql = sprintf(
+            "SELECT `id` FROM %s WHERE `username` = :nickname",
+            $this->fluxBBPrefix .'users'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('nickname', $nickname);
+        $stmt->execute();
+        $userId = $stmt->fetchColumn();
 
-        return $user->id ?? null;
+        return $userId ? (int)$userId : null;
     }
 
     private function convertPostContent(object $post): string

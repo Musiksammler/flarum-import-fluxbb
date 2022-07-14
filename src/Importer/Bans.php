@@ -3,6 +3,7 @@
 namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
+use PDO;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -13,7 +14,7 @@ class Bans
      */
     private $database;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -26,30 +27,28 @@ class Bans
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing bans...');
 
-        $bans = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'bans')
-            ->select(
-                [
-                    'id',
-                    'username',
-                    'ip',
-                    'email',
-                    'message',
-                    'expire',
-                    'ban_creator'
-                ]
-            )
-            ->where('username', '!=', null, 'or')
-            ->where('email', '!=', null, 'or')
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $fields = [
+            'id',
+            'username',
+            'ip',
+            'email',
+            'message',
+            'expire',
+            'ban_creator'
+        ];
+        $sql = sprintf(
+            "SELECT %s FROM %s WHERE `username` IS NOT NULL OR `email` IS NOT NULL ORDER BY`id`",
+            implode(', ', $fields),
+            $this->fluxBBPrefix .'bans'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $bans = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         $progressBar = new ProgressBar($output, count($bans));
 

@@ -4,6 +4,7 @@ namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
+use PDO;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -14,7 +15,7 @@ class Categories
      */
     private $database;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -27,24 +28,18 @@ class Categories
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing categories...');
 
-        $categories = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'categories')
-            ->select(
-                [
-                    'id',
-                    'cat_name',
-                    'disp_position'
-                ]
-            )
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $sql = sprintf(
+            "SELECT `id`, `cat_name`, `disp_position` FROM %s ORDER BY `id`",
+            $this->fluxBBPrefix .'categories'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $categories = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         $progressBar = new ProgressBar($output, count($categories));
 
@@ -75,64 +70,72 @@ class Categories
 
     private function getNumberOfTopics(int $categoryId): int
     {
-        return $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
-            ->selectRaw('SUM(num_topics) AS total_topics')
-            ->where('cat_id', '=', $categoryId)
-            ->get()
-            ->first()
-            ->total_topics;
+        $sql = sprintf(
+            "SELECT SUM(`num_topics`) FROM %s WHERE `cat_id = :categoryId`",
+            $this->fluxBBPrefix .'forums'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('categoryId', $categoryId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
     }
 
     private function getLastPostId(int $categoryId): int
     {
-        return $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
-            ->select(['last_post_id'])
-            ->where('cat_id', '=', $categoryId)
-            ->orderBy('last_post', 'DESC')
-            ->get()
-            ->first()
-            ->last_post_id;
+        $sql = sprintf(
+            "SELECT `last_post_id` FROM %s WHERE `cat_id` = :categoryId ORDER BY `last_post` DESC",
+            $this->fluxBBPrefix .'forums'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('categoryId', $categoryId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
     }
 
     private function getLastPostedAt(int $categoryId): int
     {
-        return $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
-            ->select(['last_post'])
-            ->where('cat_id', '=', $categoryId)
-            ->orderBy('last_post', 'DESC')
-            ->get()
-            ->first()
-            ->last_post;
+        $sql = sprintf(
+            "SELECT `last_post` FROM %s WHERE `cat_id` = :categoryId ORDER BY `last_post` DESC",
+            $this->fluxBBPrefix .'forums'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('categoryId', $categoryId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
     }
 
     private function getLastTopicId(int $categoryId): int
     {
         $lastPostId = $this->getLastPostId($categoryId);
 
-        return $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select(['topic_id'])
-            ->where('id', '=', $lastPostId)
-            ->get()
-            ->first()
-            ->topic_id;
+        $sql = sprintf(
+            "SELECT `topic_id` FROM %s WHERE `id` = :lastPostId",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('lastPostId', $lastPostId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
     }
 
     private function getLastPostUserId(int $categoryId): ?int
     {
         $lastPostId = $this->getLastPostId($categoryId);
 
-        $topic = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select(['poster_id'])
-            ->where('id', '=', $lastPostId)
-            ->where('poster_id', '!=', 1)
-            ->get()
-            ->first();
+        $sql = sprintf(
+            "SELECT `poster_id` FROM %s WHERE `id` = :lastPostId AND `poster_id` != 1",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('lastPostId', $lastPostId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return $topic->poster_id ?? null;
+        $posterId = $stmt->fetchColumn();
+
+        return $posterId ? (int)$posterId : null;
     }
 }

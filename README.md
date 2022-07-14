@@ -14,3 +14,5 @@ composer require packrats/flarum-import-fluxbb
 ```sh
 ./flarum app:import-from-fluxbb  [<fluxbb-database> [<fluxbb-prefix> [[<avatars-dir>]]]
 ```
+
+P.S.: And yes, i hate laravel...

@@ -3,6 +3,7 @@
 namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
+use PDO;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -13,7 +14,7 @@ class ForumSubscriptions
      */
     private $database;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -26,27 +27,22 @@ class ForumSubscriptions
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing forum_subscriptions...');
 
-        $topicSubscriptions = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forum_subscriptions')
-            ->select(
-                [
-                    'user_id',
-                    'forum_id'
-                ]
-            )
-            ->orderBy('forum_id')
-            ->get()
-            ->all();
+        $sql = sprintf(
+            "SELECT `user_id`, `forum_id` FROM %s ORDER BY `forum_id`",
+            $this->fluxBBPrefix .'forum_subscriptions'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $forumSubscriptions = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-        $progressBar = new ProgressBar($output, count($topicSubscriptions));
+        $progressBar = new ProgressBar($output, count($forumSubscriptions));
 
-        foreach ($topicSubscriptions as $topicSubscription) {
+        foreach ($forumSubscriptions as $topicSubscription) {
             $this->database
                 ->table('tag_user')
                 ->insert(

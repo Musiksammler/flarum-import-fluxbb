@@ -4,6 +4,7 @@ namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
+use PDO;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -14,7 +15,7 @@ class Forums
      */
     private $database;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -27,34 +28,34 @@ class Forums
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing forums...');
 
-        $forums = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
-            ->select(
-                [
-                    'id',
-                    'forum_name',
-                    'forum_desc',
-                    'redirect_url',
-                    'moderators',
-                    'num_topics',
-                    'num_posts',
-                    'last_post',
-                    'last_post_id',
-                    'last_poster',
-                    'sort_by',
-                    'disp_position',
-                    'cat_id'
-                ]
-            )
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $fields = [
+            'id',
+            'forum_name',
+            'forum_desc',
+            'redirect_url',
+            'moderators',
+            'num_topics',
+            'num_posts',
+            'last_post',
+            'last_post_id',
+            'last_poster',
+            'sort_by',
+            'disp_position',
+            'cat_id'
+        ];
+        $sql = sprintf(
+            "SELECT %s FROM %s ORDER BY `id`",
+            implode(', ', $fields),
+            $this->fluxBBPrefix .'forums'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $forums = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         $progressBar = new ProgressBar($output, count($forums));
 
@@ -87,26 +88,31 @@ class Forums
 
     private function getLastTopicId(int $lastPostId): ?int
     {
-        $topic = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select(['topic_id'])
-            ->where('id', '=', $lastPostId)
-            ->get()
-            ->first();
+        $sql = sprintf(
+            "SELECT `topic_id` FROM %s WHERE `id` = :lastPostId",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('lastPostId', $lastPostId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return $topic->topic_id ?? null;
+        $topicId = $stmt->fetchColumn();
+
+        return $topicId ? (int)$topicId : null;
     }
 
     private function getLastPostUserId(int $lastPostId): ?int
     {
-        $topic = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select(['poster_id'])
-            ->where('id', '=', $lastPostId)
-            ->where('poster_id', '!=', 1)
-            ->get()
-            ->first();
+        $sql = sprintf(
+            "SELECT `poster_id` FROM %s WHERE `id` = :lastPostId AND `poster_id` != 1",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('lastPostId', $lastPostId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return $topic->poster_id ?? null;
+        $posterId = $stmt->fetchColumn();
+
+        return $posterId ? (int)$posterId : null;
     }
 }

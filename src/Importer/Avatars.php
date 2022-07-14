@@ -6,7 +6,9 @@ use Flarum\Foundation\Paths;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManagerStatic as Image;
+use PDO;
 use Psr\Container\ContainerInterface;
+use RuntimeException;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -17,7 +19,7 @@ class Avatars
      */
     private $database;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -39,20 +41,19 @@ class Avatars
         $this->container = $container;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix, string $avatarsDir)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix, string $avatarsDir)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
         $this->avatarsDir = $avatarsDir;
         $output->writeln('Importing avatars...');
 
-        $users = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'users')
-            ->select(['id'])
-            ->where('username', '!=', 'Guest')
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $sql = sprintf(
+            "SELECT `id` FROM %s WHERE `username` != 'Guest' ORDER BY `id`",
+            $this->fluxBBPrefix .'users'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $users = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         $progressBar = new ProgressBar($output, count($users));
 
@@ -87,7 +88,7 @@ class Avatars
 		}
         $newPath = $newDir . '/' . $newFileName;
         if (file_exists($newPath)) {
-            throw new \RuntimeException('Avatar already exists: ' . $newFileName);
+            throw new RuntimeException('Avatar already exists: ' . $newFileName);
         }
 
         Image::configure(['driver' => 'imagick']);

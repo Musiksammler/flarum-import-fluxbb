@@ -4,6 +4,7 @@ namespace Packrats\ImportFluxBB\Importer;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
+use PDO;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -14,7 +15,7 @@ class Topics
      */
     private $database;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -27,36 +28,35 @@ class Topics
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing topics...');
 
-        $topics = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'topics')
-            ->select(
-                [
-                    'id',
-                    'poster',
-                    'subject',
-                    'posted',
-                    'first_post_id',
-                    'last_post',
-                    'last_post_id',
-                    'last_poster',
-                    'num_views',
-                    'num_replies',
-                    'closed',
-                    'sticky',
-                    'moved_to',
-                    'forum_id'
-                ]
-            )
-            ->where('moved_to', '=', null)
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $fields = [
+            'id',
+            'poster',
+            'subject',
+            'posted',
+            'first_post_id',
+            'last_post',
+            'last_post_id',
+            'last_poster',
+            'num_views',
+            'num_replies',
+            'closed',
+            'sticky',
+            'moved_to',
+            'forum_id'
+        ];
+        $sql = sprintf(
+            "SELECT %s FROM %s WHERE `moved_to IS NULL` ORDER BY `id`",
+            implode(', ', $fields),
+            $this->fluxBBPrefix .'topics'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $topics = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         $progressBar = new ProgressBar($output, count($topics));
 
@@ -118,12 +118,15 @@ class Topics
 
     private function getUserByPost(int $postId): ?int
     {
-        $post = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select(['poster', 'poster_id'])
-            ->where('id', '=', $postId)
-            ->get()
-            ->first();
+        $sql = sprintf(
+            "SELECT `poster`, `poster_id` FROM %s WHERE `id` = :postId",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('postId', $postId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $post = $stmt->fetch(PDO::FETCH_OBJ);
 
         if ($post->poster_id > 1) {
             return $post->poster_id;
@@ -134,38 +137,42 @@ class Topics
 
     private function getUserByName(string $nickname): ?int
     {
-        $user = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'users')
-            ->select(['id'])
-            ->where('username', '=', $nickname)
-            ->get()
-            ->first();
+        $sql = sprintf(
+            "SELECT `id` FROM %s WHERE `username` = :nickname",
+            $this->fluxBBPrefix .'users'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('nickname', $nickname);
+        $stmt->execute();
+        $userId = $stmt->fetchColumn();
 
-        return $user->id ?? null;
+        return $userId ? (int)$userId : null;
     }
 
     private function getParticipantCountByTopic(int $topicId): int
     {
-        $participants = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select('poster')
-            ->where('topic_id', '=', $topicId)
-            ->groupBy('poster')
-            ->get()
-            ->all();
-        return count($participants);
+        $sql = sprintf(
+            "SELECT COUNT(`poster`) FROM %s WHERE `topic_id = :topicId` GROUP BY `poster`",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('topicId', $topicId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
     }
 
     private function getParentTagId(int $tagId): int
     {
-        $user = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'forums')
-            ->select(['cat_id'])
-            ->where('id', '=', $tagId)
-            ->get()
-            ->first();
+        $sql = sprintf(
+            "SELECT `cat_id` FROM %s WHERE `id` = :tagId",
+            $this->fluxBBPrefix .'forums'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('tagId', $tagId, PDO::PARAM_INT);
+        $stmt->execute();
 
-        return $user->cat_id;
+        return (int)$stmt->fetchColumn();
     }
 
     private function createSolvedTag(): int

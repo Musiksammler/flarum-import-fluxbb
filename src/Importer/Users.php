@@ -2,8 +2,10 @@
 
 namespace Packrats\ImportFluxBB\Importer;
 
+use DateTime;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
+use PDO;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -14,7 +16,7 @@ class Users
      */
     private $database;
     /**
-     * @var string
+     * @var PDO
      */
     private $fluxBBDatabase;
     /**
@@ -27,89 +29,102 @@ class Users
         $this->database = $database;
     }
 
-    public function execute(OutputInterface $output, string $fluxBBDatabase, string $fluxBBPrefix)
+    public function execute(OutputInterface $output, PDO $fluxBBDatabase, string $fluxBBPrefix)
     {
         $this->fluxBBDatabase = $fluxBBDatabase;
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing users...');
 
-        $users = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'users')
-            ->select(
-                [
-                    'id',
-                    'group_id',
-                    'username',
-                    'password',
-                    'email',
-                    'title',
-                    'realname',
-                    'url',
-                    'jabber',
-                    'location',
-                    'signature',
-                    'disp_topics',
-                    'disp_posts',
-                    'email_setting',
-                    'notify_with_post',
-                    'auto_notify',
-                    'show_smilies',
-                    'show_img',
-                    'show_img_sig',
-                    'show_avatars',
-                    'show_sig',
-                    'timezone',
-                    'dst',
-                    'time_format',
-                    'date_format',
-                    'language',
-                    'style',
-                    'num_posts',
-                    'last_post',
-                    'last_search',
-                    'last_email_sent',
-                    'last_report_sent',
-                    'registered',
-                    'registration_ip',
-                    'last_visit',
-                    'admin_note',
-                    'activate_string',
-                    'activate_key'
-                ]
-            )
-            ->where('username', '!=', 'Guest')
-            ->orderBy('id')
-            ->get()
-            ->all();
+        $fields = [
+            'id',
+            'group_id',
+            'username',
+            'password',
+            'email',
+            'title',
+            'realname',
+            'url',
+            'jabber',
+            'location',
+            'signature',
+            'disp_topics',
+            'disp_posts',
+            'email_setting',
+            'notify_with_post',
+            'auto_notify',
+            'show_smilies',
+            'show_img',
+            'show_img_sig',
+            'show_avatars',
+            'show_sig',
+            'timezone',
+            'dst',
+            'time_format',
+            'date_format',
+            'language',
+            'style',
+            'num_posts',
+            'last_post',
+            'last_search',
+            'last_email_sent',
+            'last_report_sent',
+            'registered',
+            'registration_ip',
+            'last_visit',
+            'admin_note',
+            'activate_string',
+            'activate_key'
+        ];
+
+        $sql = sprintf(
+            "SELECT %s FROM %s WHERE `username` != 'Guest' ORDER BY `id`",
+            implode(', ', $fields),
+            $this->fluxBBPrefix .'users'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $users = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         $progressBar = new ProgressBar($output, count($users));
 
         $userNames = $this->createUsernameMap($users);
 
         foreach ($users as $user) {
-            $lastSeenAt = (new \DateTime())->setTimestamp($user->last_visit);
-            $this->database
-                ->table('users')
-                ->insert(
-                    [
-                        'id' => $user->id,
-                        'username' => $userNames[$user->id],
-                        'nickname' => $user->username,
-                        'email' => $user->email,
-                        'is_email_confirmed' => $user->group_id == 0 ? 0 : 1,
-                        'password' => '', // password will be migrated by migratetoflarum/old-passwords
-                        'preferences' => $this->createPreferences($user),
-                        'joined_at' => (new \DateTime())->setTimestamp($user->registered),
+            $lastSeenAt = (new DateTime())->setTimestamp($user->last_visit);
+
+            if ((int)$user->id === 1) { // Assuming that the first user is the same admin/user as in the old forum
+                $this->database
+                    ->table('users')
+                    ->where('id', $user->id)
+                    ->update([
+                        'joined_at' => (new DateTime())->setTimestamp($user->registered),
                         'last_seen_at' => $lastSeenAt,
-                        'marked_all_as_read_at' => $lastSeenAt,
-                        'read_notifications_at' => null,
                         'discussion_count' => $this->getDiscussionCount($user->id),
                         'comment_count' => $this->getCommentCount($user->id),
-                        'read_flags_at' => null,
-                        'suspended_until' => null,
-                        'migratetoflarum_old_password' => $this->createOldPasswordHash($user->password)
-                    ]
-                );
+                    ]);
+            } else {
+                $this->database
+                    ->table('users')
+                    ->insert(
+                        [
+                            'id' => $user->id,
+                            'username' => $userNames[$user->id],
+                            'nickname' => $user->username,
+                            'email' => $user->email,
+                            'is_email_confirmed' => $user->group_id == 0 ? 0 : 1,
+                            'password' => '', // password will be migrated by migratetoflarum/old-passwords
+                            'preferences' => $this->createPreferences($user),
+                            'joined_at' => (new DateTime())->setTimestamp($user->registered),
+                            'last_seen_at' => $lastSeenAt,
+                            'marked_all_as_read_at' => $lastSeenAt,
+                            'read_notifications_at' => null,
+                            'discussion_count' => $this->getDiscussionCount($user->id),
+                            'comment_count' => $this->getCommentCount($user->id),
+                            'read_flags_at' => null,
+                            'suspended_until' => null,
+                            'migratetoflarum_old_password' => $this->createOldPasswordHash($user->password)
+                        ]
+                    );
+            }
             $progressBar->advance();
         }
         $progressBar->finish();
@@ -196,24 +211,31 @@ class Users
 
     private function getDiscussionCount(int $userId): int
     {
-        $topics = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'topics')
-            ->join($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts', $this->fluxBBPrefix .'topics.first_post_id', '=', $this->fluxBBPrefix .'posts.id')
-            ->select('topic_id')
-            ->where($this->fluxBBPrefix .'posts.poster_id', '=', $userId)
-            ->get()
-            ->all();
-        return count($topics);
+        $sql = sprintf(
+            "SELECT COUNT(`topic_id`) FROM %s JOIN %s ON %s = %s WHERE %s = :userId",
+            $this->fluxBBPrefix .'topics',
+            $this->fluxBBPrefix .'posts',
+            $this->fluxBBPrefix .'topics.first_post_id',
+            $this->fluxBBPrefix .'posts.id',
+            $this->fluxBBPrefix .'posts.poster_id'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
     }
 
     private function getCommentCount(int $userId): int
     {
-        $posts = $this->database
-            ->table($this->fluxBBDatabase . '.' .$this->fluxBBPrefix .'posts')
-            ->select('id')
-            ->where('poster_id', '=', $userId)
-            ->get()
-            ->all();
-        return count($posts);
+        $sql = sprintf(
+            "SELECT COUNT(`id`) FROM %s WHERE `poster_id = :userId`",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->prepare($sql);
+        $stmt->bindValue('userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
     }
 }
