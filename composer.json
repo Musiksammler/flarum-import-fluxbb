@@ -5,8 +5,9 @@
     "type": "flarum-extension",
     "require": {
         "php": "^7.3",
-        "flarum/core": "^1.0.0",
-        "ext-imagick": "*"
+        "ext-imagick": "*",
+        "ext-pdo": "*",
+        "flarum/core": "^1.4.0"
     },
     "autoload": {
         "psr-4": {
