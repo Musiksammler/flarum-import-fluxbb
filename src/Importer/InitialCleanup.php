@@ -40,8 +40,8 @@ class InitialCleanup
 
         $this->database->statement('SET FOREIGN_KEY_CHECKS=1');
 
-        foreach (glob($this->container[Paths::class]->public . '/assets/avatars/*.*') as $avatar) {
-            unlink($avatar);
-        }
+//        foreach (glob($this->container[Paths::class]->public . '/assets/avatars/*.*') as $avatar) {
+//            unlink($avatar);
+//        }
     }
 }
