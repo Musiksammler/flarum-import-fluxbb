@@ -36,7 +36,7 @@ class InitialCleanup
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'groups');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'group_user');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'tags');
-        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'users');
+//        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'users');
 
         $this->database->statement('SET FOREIGN_KEY_CHECKS=1');
 

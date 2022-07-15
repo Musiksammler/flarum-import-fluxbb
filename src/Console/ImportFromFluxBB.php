@@ -171,7 +171,7 @@ class ImportFromFluxBB extends AbstractCommand
         ini_set('memory_limit', '16G');
 
         $this->initialCleanup->execute($this->output);
-        $this->users->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
+//        $this->users->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->avatars->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'), $this->input->getArgument('fluxbb-host'));
         $this->categories->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->forums->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
