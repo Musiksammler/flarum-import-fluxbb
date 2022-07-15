@@ -152,7 +152,7 @@ class Topics
     private function getParticipantCountByTopic(int $topicId): int
     {
         $sql = sprintf(
-            "SELECT COUNT(`poster`) FROM %s WHERE `topic_id = :topicId` GROUP BY `poster`",
+            "SELECT COUNT(`poster`) FROM %s WHERE `topic_id` = :topicId GROUP BY `poster`",
             $this->fluxBBPrefix .'posts'
         );
         $stmt = $this->fluxBBDatabase->prepare($sql);
