@@ -51,7 +51,7 @@ class Topics
             'forum_id'
         ];
         $sql = sprintf(
-            "SELECT %s FROM %s WHERE `moved_to IS NULL` ORDER BY `id`",
+            "SELECT %s FROM %s WHERE `moved_to` IS NULL ORDER BY `id`",
             implode(', ', $fields),
             $this->fluxBBPrefix .'topics'
         );
