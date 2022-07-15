@@ -5,6 +5,7 @@ namespace Packrats\ImportFluxBB\Importer;
 use Flarum\Foundation\Paths;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
+use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManagerStatic as Image;
 use PDO;
 use Psr\Container\ContainerInterface;
@@ -100,7 +101,12 @@ class Avatars
         }
 
         Image::configure(['driver' => 'gd']);
-        $image = Image::make($avatarFile);
+        try {
+            $image = Image::make($avatarFile);
+        } catch (NotReadableException $exception) {
+            return null;
+        }
+
         if (!Str::endsWith($avatarFile, '.png')
             || $image->getWidth() !== $image->getHeight()
             || $image->getWidth() > 100) {
@@ -113,6 +119,7 @@ class Avatars
         } else {
             file_put_contents($avatarFile, $newPath);
         }
+
         system('optipng -o 5 -strip all -snip -quiet ' . $newPath);
 
         return $newFileName;
