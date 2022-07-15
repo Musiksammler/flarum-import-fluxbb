@@ -55,6 +55,13 @@ class Posts
 
         $output->writeln('Importing posts...');
 
+        $sql = sprintf(
+            "SELECT COUNT(`id`) FROM %s",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $numberPosts = (int)$stmt->fetchColumn();
+
         $fields = [
             'id',
             'poster',
@@ -68,47 +75,52 @@ class Posts
             'edited_by',
             'topic_id'
         ];
-        $sql = sprintf(
-            "SELECT %s FROM %s ORDER BY `topic_id`, `id`",
-            implode(', ', $fields),
-            $this->fluxBBPrefix .'posts'
-        );
-        $stmt = $this->fluxBBDatabase->query($sql);
-        $posts = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-        $progressBar = new ProgressBar($output, count($posts));
+        $progressBar = new ProgressBar($output, $numberPosts);
 
-        $this->database->statement('SET FOREIGN_KEY_CHECKS=0');
-        $lastTopicId = 0;
-        $currentPostNumber = 0;
-        foreach ($posts as $post) {
-            if ($lastTopicId !== $post->topic_id) {
-                $currentPostNumber = 0;
+        for ($start = 0; $start < $numberPosts; $start += 10000) {
+            $sql = sprintf(
+                "SELECT %s FROM %s ORDER BY `topic_id`, `id` LIMIT %d, 10000",
+                implode(', ', $fields),
+                $this->fluxBBPrefix .'posts',
+                $start
+            );
+            $stmt = $this->fluxBBDatabase->query($sql);
+            $posts = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            $this->database->statement('SET FOREIGN_KEY_CHECKS=0');
+            $lastTopicId = 0;
+            $currentPostNumber = 0;
+            foreach ($posts as $post) {
+                if ($lastTopicId !== $post->topic_id) {
+                    $currentPostNumber = 0;
+                }
+                $currentPostNumber++;
+                $this->database
+                    ->table('posts')
+                    ->insert(
+                        [
+                            'id' => $post->id,
+                            'discussion_id' => $post->topic_id,
+                            'number' => $currentPostNumber,
+                            'created_at' => (new DateTime())->setTimestamp($post->posted),
+                            'user_id' => $post->poster_id > 1 ? $post->poster_id : null,
+                            'type' => 'comment',
+                            'content' => $this->convertPostContent($post),
+                            'edited_at' => $post->edited ? (new DateTime())->setTimestamp($post->edited) : null,
+                            'edited_user_id' => $post->edited_by ? $this->getUserByName($post->edited_by) : null,
+                            'hidden_at' => null,
+                            'hidden_user_id' => null,
+                            'ip_address' => $post->poster_ip,
+                            'is_private' => 0,
+                            'is_approved' => 1
+                        ]
+                    );
+                $lastTopicId = $post->topic_id;
+                $progressBar->advance();
             }
-            $currentPostNumber++;
-            $this->database
-                ->table('posts')
-                ->insert(
-                    [
-                        'id' => $post->id,
-                        'discussion_id' => $post->topic_id,
-                        'number' => $currentPostNumber,
-                        'created_at' => (new DateTime())->setTimestamp($post->posted),
-                        'user_id' => $post->poster_id > 1 ? $post->poster_id : null,
-                        'type' => 'comment',
-                        'content' => $this->convertPostContent($post),
-                        'edited_at' => $post->edited ? (new DateTime())->setTimestamp($post->edited) : null,
-                        'edited_user_id' => $post->edited_by ? $this->getUserByName($post->edited_by) : null,
-                        'hidden_at' => null,
-                        'hidden_user_id' => null,
-                        'ip_address' => $post->poster_ip,
-                        'is_private' => 0,
-                        'is_approved' => 1
-                    ]
-                );
-            $lastTopicId = $post->topic_id;
-            $progressBar->advance();
         }
+
         $this->database->statement('SET FOREIGN_KEY_CHECKS=1');
         $progressBar->finish();
 
