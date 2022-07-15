@@ -71,7 +71,7 @@ class Categories
     private function getNumberOfTopics(int $categoryId): int
     {
         $sql = sprintf(
-            "SELECT SUM(`num_topics`) FROM %s WHERE `cat_id = :categoryId`",
+            "SELECT SUM(`num_topics`) FROM %s WHERE `cat_id` = :categoryId",
             $this->fluxBBPrefix .'forums'
         );
         $stmt = $this->fluxBBDatabase->prepare($sql);
