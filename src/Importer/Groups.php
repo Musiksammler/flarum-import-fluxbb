@@ -171,7 +171,7 @@ class Groups
     private function importGroupPermissions(int $oldGroupId): void
     {
         $sql = sprintf(
-            "SELECT `group_id`, `forum_id`, `read_forum`, `post_replies`, `post_topics` FROM %s WHERE `group_id = :oldGroupId` ORDER BY `forum_id`",
+            "SELECT `group_id`, `forum_id`, `read_forum`, `post_replies`, `post_topics` FROM %s WHERE `group_id` = :oldGroupId ORDER BY `forum_id`",
             $this->fluxBBPrefix .'forum_perms'
         );
         $stmt = $this->fluxBBDatabase->prepare($sql);
