@@ -85,7 +85,7 @@ class Forums
                     [
                         'id' => null,
                         'name' => $forumName,
-                        'slug' => Str::slug(preg_replace('/\.+/', '-', $forum->forum_name), '-', 'de'),
+                        'slug' => Str::slug(preg_replace('/\.+/', '-', $forumName), '-', 'de'),
                         'description' => $forum->forum_desc,
                         'position' => $forum->disp_position,
                         'parent_id' => $categoriesIds[$forum->cat_name],
