@@ -36,11 +36,11 @@ class InitialCleanup
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'groups');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'group_user');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'group_permission');
-//        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'discussions');
+        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'discussions');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'discussion_tag');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'discussion_user');
-//        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'posts');
-//        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'tags');
+        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'posts');
+        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'tags');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'tag_user');
 //        $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'users');
         $this->database->statement('TRUNCATE TABLE '.$this->database->getTablePrefix().'flags');
