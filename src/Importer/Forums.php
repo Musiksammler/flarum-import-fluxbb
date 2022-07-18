@@ -75,12 +75,16 @@ class Forums
 
         $this->database->statement('SET FOREIGN_KEY_CHECKS=0');
         foreach ($forums as $forum) {
+            $forumName = $forum->forum_name;
+            if ($forum->forum_name === 'Offtopic') {
+                $forumName = 'Kaffeeklatsch';
+            }
             $this->database
                 ->table('tags')
                 ->insert(
                     [
                         'id' => null,
-                        'name' => $forum->forum_name,
+                        'name' => $forumName,
                         'slug' => Str::slug(preg_replace('/\.+/', '-', $forum->forum_name), '-', 'de'),
                         'description' => $forum->forum_desc,
                         'position' => $forum->disp_position,

@@ -38,7 +38,7 @@ class Topics
         $forums = $this->database
             ->table('tags')
             ->select(['id', 'name'])
-            ->where('parent_id', '=', null)
+            ->where('parent_id', '!=', null)
             ->orderBy('id')
             ->get()
             ->all();
@@ -80,7 +80,12 @@ class Topics
 
         foreach ($topics as $topic) {
             $numberOfPosts = $topic->num_replies + 1;
-            $tagIds = [$this->getParentTagId($topic->forum_name), $forumsIds[$topic->forum_name]];
+
+            $forumName = $topic->forum_name;
+            if ($topic->forum_name === 'Offtopic') {
+                $forumName = 'Kaffeeklatsch';
+            }
+            $tagIds = [$this->getParentTagId($forumName), $forumsIds[$forumName]];
 
             if ($this->replaceSolvedHintByTag($topic->subject)) {
                 $tagIds[] = $solvedTagId;
