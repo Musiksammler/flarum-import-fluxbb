@@ -153,7 +153,6 @@ class ImportFromFluxBB extends AbstractCommand
             'flarum-bbcode',
             'flarum-emoji',
             'flarum-mentions',
-//            'flarum-nicknames',
             'flarum-sticky',
             'flarum-subscriptions',
             'flarum-tags',
@@ -173,12 +172,12 @@ class ImportFromFluxBB extends AbstractCommand
         $this->initialCleanup->execute($this->output);
 //        $this->users->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
 //        $this->avatars->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'), $this->input->getArgument('fluxbb-host'));
-//        $this->categories->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
-//        $this->forums->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
-//        $this->topics->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
-//        $this->posts->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
-//        $this->topicSubscriptions->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
-//        $this->forumSubscriptions->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
+        $this->categories->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
+        $this->forums->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
+        $this->topics->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
+        $this->posts->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
+        $this->topicSubscriptions->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
+        $this->forumSubscriptions->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->groups->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->bans->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));
         $this->reports->execute($this->output, $fluxBBDatabase, $this->input->getArgument('fluxbb-prefix'));

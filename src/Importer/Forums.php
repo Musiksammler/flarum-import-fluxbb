@@ -2,6 +2,7 @@
 
 namespace Packrats\ImportFluxBB\Importer;
 
+use DateTime;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 use PDO;
@@ -34,25 +35,38 @@ class Forums
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing forums...');
 
+        $categories = $this->database
+            ->table('tags')
+            ->select(['id', 'name'])
+            ->orderBy('id')
+            ->get()
+            ->all();
+        $categoriesIds = [];
+        foreach ($categories as $category) {
+            $categoriesIds[$category->name] = $category->id;
+        }
+
         $fields = [
-            'id',
-            'forum_name',
-            'forum_desc',
-            'redirect_url',
-            'moderators',
-            'num_topics',
-            'num_posts',
-            'last_post',
-            'last_post_id',
-            'last_poster',
-            'sort_by',
-            'disp_position',
-            'cat_id'
+            'p.id',
+            'p.forum_name',
+            'p.forum_desc',
+            'p.redirect_url',
+            'p.moderators',
+            'p.num_topics',
+            'p.num_posts',
+            'p.last_post',
+            'p.last_post_id',
+            'p.last_poster',
+            'p.sort_by',
+            'p.disp_position',
+            'p.cat_id',
+            'c.cat_name',
         ];
         $sql = sprintf(
-            "SELECT %s FROM %s ORDER BY `id`",
+            "SELECT %s FROM %s AS p JOIN %s AS c ON p.`cat_id` = c.`id` ORDER BY p.`id`",
             implode(', ', $fields),
-            $this->fluxBBPrefix .'forums'
+            $this->fluxBBPrefix .'forums',
+            $this->fluxBBPrefix .'categories'
         );
         $stmt = $this->fluxBBDatabase->query($sql);
         $forums = $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -65,14 +79,14 @@ class Forums
                 ->table('tags')
                 ->insert(
                     [
-                        'id' => $forum->id,
+                        'id' => null,
                         'name' => $forum->forum_name,
                         'slug' => Str::slug(preg_replace('/\.+/', '-', $forum->forum_name), '-', 'de'),
                         'description' => $forum->forum_desc,
                         'position' => $forum->disp_position,
-                        'parent_id' => $forum->cat_id,
+                        'parent_id' => $categoriesIds[$forum->cat_name],
                         'discussion_count' => $forum->num_topics,
-                        'last_posted_at' => (new \DateTime())->setTimestamp($forum->last_post),
+                        'last_posted_at' => (new DateTime())->setTimestamp($forum->last_post),
                         'last_posted_discussion_id' => $this->getLastTopicId($forum->last_post_id),
                         'last_posted_user_id' => $this->getLastPostUserId($forum->last_post_id),
                         'color' => '#333'

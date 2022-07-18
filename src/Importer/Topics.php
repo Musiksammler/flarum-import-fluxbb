@@ -2,6 +2,7 @@
 
 namespace Packrats\ImportFluxBB\Importer;
 
+use DateTime;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 use PDO;
@@ -34,26 +35,40 @@ class Topics
         $this->fluxBBPrefix = $fluxBBPrefix;
         $output->writeln('Importing topics...');
 
+        $forums = $this->database
+            ->table('tags')
+            ->select(['id', 'name'])
+            ->where('parent_id', '=', null)
+            ->orderBy('id')
+            ->get()
+            ->all();
+        $forumsIds = [];
+        foreach ($forums as $forum) {
+            $forumsIds[$forum->name] = $forum->id;
+        }
+
         $fields = [
-            'id',
-            'poster',
-            'subject',
-            'posted',
-            'first_post_id',
-            'last_post',
-            'last_post_id',
-            'last_poster',
-            'num_views',
-            'num_replies',
-            'closed',
-            'sticky',
-            'moved_to',
-            'forum_id'
+            't.id',
+            't.poster',
+            't.subject',
+            't.posted',
+            't.first_post_id',
+            't.last_post',
+            't.last_post_id',
+            't.last_poster',
+            't.num_views',
+            't.num_replies',
+            't.closed',
+            't.sticky',
+            't.moved_to',
+            't.forum_id',
+            'f.forum_name'
         ];
         $sql = sprintf(
-            "SELECT %s FROM %s WHERE `moved_to` IS NULL ORDER BY `id`",
+            "SELECT %s FROM %s AS t JOIN %s AS f ON t.`forum_id` = f.`id` AS t WHERE `moved_to` IS NULL ORDER BY `id`",
             implode(', ', $fields),
-            $this->fluxBBPrefix .'topics'
+            $this->fluxBBPrefix .'topics',
+            $this->fluxBBPrefix .'forums',
         );
         $stmt = $this->fluxBBDatabase->query($sql);
         $topics = $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -65,7 +80,7 @@ class Topics
 
         foreach ($topics as $topic) {
             $numberOfPosts = $topic->num_replies + 1;
-            $tagIds = [$this->getParentTagId($topic->forum_id), $topic->forum_id];
+            $tagIds = [$this->getParentTagId($topic->forum_name), $forumsIds[$topic->forum_name]];
 
             if ($this->replaceSolvedHintByTag($topic->subject)) {
                 $tagIds[] = $solvedTagId;
@@ -80,10 +95,10 @@ class Topics
                         'comment_count' => $numberOfPosts,
                         'participant_count' => $this->getParticipantCountByTopic($topic->id),
                         'post_number_index' => $numberOfPosts,
-                        'created_at' => (new \DateTime())->setTimestamp($topic->posted),
+                        'created_at' => (new DateTime())->setTimestamp($topic->posted),
                         'user_id' => $this->getUserByPost($topic->first_post_id),
                         'first_post_id' => $topic->first_post_id,
-                        'last_posted_at' => (new \DateTime())->setTimestamp($topic->last_post),
+                        'last_posted_at' => (new DateTime())->setTimestamp($topic->last_post),
                         'last_posted_user_id' => $this->getUserByPost($topic->last_post_id),
                         'last_post_id' => $topic->last_post_id,
                         'last_post_number' => $numberOfPosts,
@@ -162,17 +177,16 @@ class Topics
         return (int)$stmt->fetchColumn();
     }
 
-    private function getParentTagId(int $tagId): int
+    private function getParentTagId(string $tagName): int
     {
-        $sql = sprintf(
-            "SELECT `cat_id` FROM %s WHERE `id` = :tagId",
-            $this->fluxBBPrefix .'forums'
-        );
-        $stmt = $this->fluxBBDatabase->prepare($sql);
-        $stmt->bindValue('tagId', $tagId, PDO::PARAM_INT);
-        $stmt->execute();
+        $tag = $this->database
+            ->table('tags')
+            ->select('parent_id')
+            ->where('name', '=', $tagName)
+            ->get()
+            ->first();
 
-        return (int)$stmt->fetchColumn();
+        return $tag->id;
     }
 
     private function createSolvedTag(): int
