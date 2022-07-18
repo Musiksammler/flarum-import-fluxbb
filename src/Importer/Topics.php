@@ -65,7 +65,7 @@ class Topics
             'f.forum_name'
         ];
         $sql = sprintf(
-            "SELECT %s FROM %s AS t JOIN %s AS f ON t.`forum_id` = f.`id` AS t WHERE `moved_to` IS NULL ORDER BY `id`",
+            "SELECT %s FROM %s AS t JOIN %s AS f ON t.`forum_id` = f.`id` WHERE `moved_to` IS NULL ORDER BY `id`",
             implode(', ', $fields),
             $this->fluxBBPrefix .'topics',
             $this->fluxBBPrefix .'forums',
@@ -191,7 +191,7 @@ class Topics
             ->get()
             ->first();
 
-        return $tag->id;
+        return $tag->parent_id;
     }
 
     private function createSolvedTag(): int
