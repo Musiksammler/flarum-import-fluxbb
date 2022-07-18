@@ -62,6 +62,13 @@ class Posts
         $stmt = $this->fluxBBDatabase->query($sql);
         $numberPosts = (int)$stmt->fetchColumn();
 
+        $sql = sprintf(
+            "SELECT DISTINCT `topic_id` FROM %s",
+            $this->fluxBBPrefix .'posts'
+        );
+        $stmt = $this->fluxBBDatabase->query($sql);
+        $topicIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
         $fields = [
             'id',
             'poster',
@@ -78,23 +85,24 @@ class Posts
 
         $progressBar = new ProgressBar($output, $numberPosts);
 
-        for ($start = 0; $start < $numberPosts; $start += 10000) {
+        foreach ($topicIds as $topicId) {
             $sql = sprintf(
-                "SELECT %s FROM %s ORDER BY `topic_id`, `id` LIMIT %d, 10000",
+                "SELECT %s FROM %s WHERE `topic_id` = :topicId ORDER BY `id`",
                 implode(', ', $fields),
-                $this->fluxBBPrefix .'posts',
-                $start
+                $this->fluxBBPrefix .'posts'
             );
-            $stmt = $this->fluxBBDatabase->query($sql);
+            $stmt = $this->fluxBBDatabase->prepare($sql);
+            $stmt->bindValue('topicId', $topicId, PDO::PARAM_INT);
+            $stmt->execute();
             $posts = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             $this->database->statement('SET FOREIGN_KEY_CHECKS=0');
-            $lastTopicId = 0;
+//            $lastTopicId = 0;
             $currentPostNumber = 0;
             foreach ($posts as $post) {
-                if ($lastTopicId !== $post->topic_id) {
-                    $currentPostNumber = 0;
-                }
+//                if ($lastTopicId !== $post->topic_id) {
+//                    $currentPostNumber = 0;
+//                }
                 $currentPostNumber++;
                 $this->database
                     ->table('posts')
@@ -116,7 +124,7 @@ class Posts
                             'is_approved' => 1
                         ]
                     );
-                $lastTopicId = $post->topic_id;
+//                $lastTopicId = $post->topic_id;
                 $progressBar->advance();
             }
         }
